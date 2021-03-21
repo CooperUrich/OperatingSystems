@@ -1,6 +1,7 @@
 // Cooper Urich (4518739)
 // Assignment 3
 // COP 4600
+// Fixed
 
 #include <stdio.h>
 #include <iostream>
@@ -63,6 +64,8 @@ public:
     void appendShellDir(string toAppend)
     {
         currentDir.append(toAppend);
+        setShellDir(currentDir);
+        cout << "New directory: " << (currentDir) << endl;
     }
 
     // adds the command to the history
@@ -142,7 +145,7 @@ public:
 
     string getReplay(int num)
     {
-        return commandHistory.at(num);
+        return commandHistory.at(num - 1);
     }
 
     // Need to make a separate function for this because
@@ -597,7 +600,7 @@ mysh parseString(mysh shell, string str)
 
         ss >> argument;
         // call movetodir function
-        movetodir(shell, argument);
+        shell = movetodir(shell, argument);
 
         // record command
         shell.recordCommand(str);
@@ -610,8 +613,8 @@ mysh parseString(mysh shell, string str)
         int size = shell.getCmndHstrySize();
         int num;
         string str = "";
-        ss >> argument;
-        argument += 1;
+        ss >> num;
+        num += 1;
 
         // get command from that certain index in the command history
         str = shell.getReplay(num);
