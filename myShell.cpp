@@ -1,7 +1,6 @@
 // Cooper Urich (4518739)
-// Assignment 3
+// Assignment 5
 // COP 4600
-// Fixed
 
 #include <stdio.h>
 #include <iostream>
@@ -457,6 +456,123 @@ mysh background(mysh shell, string argument)
     shell.setPID(PID);
     return shell;
 }
+mysh coppy(mysh shell, string from, string to){
+    char ch;
+    const char *fromFile;
+    const char *toFile;
+    if (from[0] == '/')
+    {
+        //Full Path
+        fromFile = from.c_str();
+    } 
+    else {
+        string fromStringFile = shell.getShellDirectory() + "/" + from;
+        fromFile = fromStringFile.c_str();
+    }
+    int fromResult = access(fromFile, F_OK);
+    if (fromResult != 0){
+        cout << "Source File Does Not Exist";
+        return shell;
+    }
+    ifstream file;
+    file.open(to);
+    if (file){
+        cout << "ERROR! file already exists" << endl;
+        return shell;
+    }
+    ifstream fileFrom(from);
+    ofstream fileTo(to);
+    while(fileFrom && fileFrom.get(ch) ) 
+        fileTo << ch;
+
+    fileTo.close();
+    fileFrom.close();
+   
+    return shell;
+}
+
+// See the difference between file and directory
+void dwelt(mysh shell, string filepath){
+    bool relative = false;
+    string filepath1;
+    const char *testFullPath;
+    const char *testFullPathAdditional;
+    const char *testFile;
+    const char *testFolder;
+    int result1, result2;
+    if (filepath[0] == '/')
+    {
+        //Full Path
+        if (filepath.back() != '/'){
+            filepath1 = filepath + "/";
+            testFullPath = filepath.c_str();
+            result1 = access(testFullPath, F_OK);
+            testFullPathAdditional = filepath1.c_str();
+            result2 = access(testFullPathAdditional, F_OK);
+
+            if (result2 == 0){
+                cout << "Abode is." << endl;
+                return;
+            }
+            if (result1 == 0){
+                cout << "Dwelt Indeed." << endl;
+                return;
+            }
+            if (result1 != 0 && result2 != 0){
+                cout << "Dwelt not." << endl;
+                return;
+            }
+        }
+    }
+
+    else
+    {
+        //Relative Path
+        string testStringFile = shell.getShellDirectory() + "/" + filepath;
+        string testStringFolder = shell.getShellDirectory() + "/" + filepath + "/";
+        testFile = testStringFile.c_str();
+        testFolder = testStringFolder.c_str();
+
+        //Make sure the file exists
+        int result1 = access(testFolder, F_OK);
+        int result2 = access(testFile, F_OK);
+        if (result1 == 0)
+        {
+            cout << "Abode is.\n";
+            return;
+        }
+        if (result2 == 0)
+        {
+            cout << "Dwelt Indeed.\n";
+            return;
+        }
+        
+        if (result1 != 0 && result2 != 0){
+            cout << "Dwelt not.\n";
+            return;
+        }
+    }
+
+}
+mysh maik(mysh shell, string filename){
+    ifstream file;
+    string testString;
+    bool relative = false;
+    const char *testChar;
+
+    file.open(filename);
+    if (file){
+        cout << "ERROR! file already exists" << endl;
+        return shell;
+    }
+
+    ofstream MyFile(filename);
+    MyFile << "Draft" << endl;
+    MyFile.close();
+    cout << "\"" << filename << "\" " << "made!" << endl;
+
+    return shell;
+}
 
 mysh movetodir(mysh shell, string argument)
 {
@@ -593,6 +709,7 @@ mysh parseString(mysh shell, string str)
 
     //Parse command to compare to shell command
     ss >> command;
+    
 
     //Change Directory
     if (command.compare("movetodir") == 0)
@@ -654,6 +771,21 @@ mysh parseString(mysh shell, string str)
         return shell;
     }
 
+    else if (command.compare("dwelt") == 0)
+    {
+        ss >> argument;
+        dwelt(shell, argument);
+        shell.recordCommand(str);
+        return shell;
+    } 
+    else if (command.compare("maik") == 0)
+    {
+        ss >> argument;
+        maik(shell, argument);
+        shell.recordCommand(str);
+        return shell;
+    }
+
     //Print Command History
     else if (command.compare("history") == 0)
     {
@@ -710,6 +842,18 @@ mysh parseString(mysh shell, string str)
         return shell;
     }
 
+    else if (command.compare("coppy") == 0){
+        string to, from;
+
+        ss >> from;
+        ss >> to;
+        shell.recordCommand(str);
+        shell = coppy(shell, from, to);
+        return shell;
+    }
+
+
+
     // Terminates the Shell and writes to the history file
     else if (command.compare("byebye") == 0)
     {
@@ -719,6 +863,7 @@ mysh parseString(mysh shell, string str)
         cout << "Exiting mysh" << endl;
         exit(0);
     }
+
 
     // Else, it is an invalid command and you must retry that command
     else
@@ -739,9 +884,9 @@ int main()
 
     // print out menu
     cout << "\n\n";
-    cout << "                       Cooper Urich Operating Systems Assignment 3\n";
-    cout << "                                  List of Commands\n";
-    cout << "--------------------------------------------------------------------------------------------\n";
+    cout << "                                     Cooper Urich Operating Systems Assignment 3\n";
+    cout << "                                                  List of Commands\n";
+    cout << "----------------------------------------------------------------------------------------------------------------------------\n";
     cout << "- movetodir (directory)                -> move to that directory\n";
     cout << "- whereami                             -> prints current director\n";
     cout << "- history [-c]                         -> prints shell history\n";
@@ -751,7 +896,11 @@ int main()
     cout << "- background \"program\"[parameters]     -> prints the PID of the program it started\n";
     cout << "- dalek \"PID\"                          -> terminate program based off of PID\n";
     cout << "- dalekall                             -> terminates all current active PIDs in shell\n";
-    cout << "- byebye                               -> close shell\n\n\n";
+    cout << "- dwelt 'file'                         -> Determines if a path is a file, directory, or does not exist\n";
+    cout << "- maik 'file'                          -> Creates a file and writes \"Draft\" into it, if the file does not exist already\n";
+    cout << "- coppy 'from-file' 'to-file'          -> Copies from-file to the file to-file\n";
+    // cout << "- coppyabode 'source-dir' 'target-dir' -> Copies entire source-dir directory with all of its subdirectories\n";
+    cout << "- byebye                               -> close shell\n\n";
     cout << "# ";
 
     // reads in the previous commands from the history file
